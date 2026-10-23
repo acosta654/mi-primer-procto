@@ -10,7 +10,8 @@
 
 	const enlaces = [
 		{ href: '/', etiqueta: 'Inicio', icono: 'mdi:home-outline' },
-		{ href: '/products', etiqueta: 'Catálogo', icono: 'mdi:hanger' }
+		{ href: '/products', etiqueta: 'Catálogo', icono: 'mdi:hanger' },
+		{ href: '/formulacontacto', etiqueta: 'Contacto', icono: 'mdi:email-outline' }
 	];
 
 	const esActivo = (href: string) =>
