@@ -29,6 +29,7 @@
 		"#lib/*": "./src/lib/*"
 	},
 	"dependencies": {
-		"@iconify/svelte": "^5.2.2"
+		"@iconify/svelte": "^5.2.2",
+		"resend": "^6.34.1"
 	}
 }

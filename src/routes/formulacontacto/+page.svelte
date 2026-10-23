@@ -1,13 +1,9 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
+	import FormularioContacto from '#lib/components/formulariocontacto.svelte';
+	import type { ActionData } from './$types';
 
-	const tiposConsulta = [
-		'Pedido de tejidos',
-		'Solicitud de muestras',
-		'Proyecto a medida',
-		'Colaboración',
-		'Otro'
-	];
+	let { form }: { form: ActionData } = $props();
 
 	const datosContacto = [
 		{ icono: 'mdi:email-outline', etiqueta: 'Email', valor: 'hola@tramastudio.com' },
@@ -78,108 +74,6 @@
 		</aside>
 
 		<!-- Formulario -->
-		<form class="p-8 md:p-10" onsubmit={(evento) => evento.preventDefault()}>
-			<div class="grid gap-5 sm:grid-cols-2">
-				<label class="flex flex-col gap-1.5 text-sm text-stone-700">
-					<span class="font-medium">
-						Nombre y apellidos
-						<span class="text-stone-400" aria-hidden="true">*</span>
-					</span>
-					<input
-						type="text"
-						name="nombre"
-						autocomplete="name"
-						required
-						placeholder="Ada Lovelace"
-						class="rounded-none border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900"
-					/>
-				</label>
-
-				<label class="flex flex-col gap-1.5 text-sm text-stone-700">
-					<span class="font-medium">
-						Email
-						<span class="text-stone-400" aria-hidden="true">*</span>
-					</span>
-					<input
-						type="email"
-						name="email"
-						autocomplete="email"
-						required
-						placeholder="ada@estudio.com"
-						class="rounded-none border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900"
-					/>
-				</label>
-
-				<label class="flex flex-col gap-1.5 text-sm text-stone-700">
-					<span class="font-medium">
-						Teléfono
-						<span class="text-xs font-normal text-stone-400">(opcional)</span>
-					</span>
-					<input
-						type="tel"
-						name="telefono"
-						autocomplete="tel"
-						placeholder="+34 600 000 000"
-						class="rounded-none border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900"
-					/>
-				</label>
-
-				<label class="flex flex-col gap-1.5 text-sm text-stone-700">
-					<span class="font-medium">Tipo de consulta</span>
-					<select
-						name="tipo"
-						class="rounded-none border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900"
-					>
-						{#each tiposConsulta as tipo}
-							<option value={tipo}>{tipo}</option>
-						{/each}
-					</select>
-				</label>
-			</div>
-
-			<label class="mt-5 flex flex-col gap-1.5 text-sm text-stone-700">
-				<span class="font-medium">
-					Cuéntanos tu proyecto
-					<span class="text-stone-400" aria-hidden="true">*</span>
-				</span>
-				<textarea
-					name="mensaje"
-					rows="5"
-					required
-					placeholder="Tipo de prenda, metros estimados, colores y plazos…"
-					class="resize-y rounded-none border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900"
-				></textarea>
-			</label>
-
-			<label class="mt-5 flex items-start gap-3 text-sm text-stone-600">
-				<input
-					type="checkbox"
-					name="privacidad"
-					required
-					class="mt-0.5 h-4 w-4 shrink-0 rounded-none border-stone-300 text-stone-900 focus:ring-stone-900"
-				/>
-				<span>
-					He leído y acepto la
-					<a
-						href="/formulacontacto"
-						class="border-b border-stone-400 text-stone-900 hover:border-stone-900"
-					>
-						política de privacidad
-					</a>
-					y el tratamiento de mis datos para responder a esta consulta.
-				</span>
-			</label>
-
-			<div class="mt-8 flex flex-col gap-4 border-t border-stone-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
-				<p class="text-xs text-stone-500">Los campos marcados con * son obligatorios.</p>
-				<button
-					type="submit"
-					class="inline-flex items-center justify-center gap-2 bg-stone-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-2"
-				>
-					Enviar consulta
-					<Icon icon="mdi:arrow-right" class="text-base" />
-				</button>
-			</div>
-		</form>
+		<FormularioContacto {form} />
 	</div>
 </section>

@@ -32,6 +32,22 @@ For example, to add Tailwind CSS:
 npx sv add tailwindcss
 ```
 
+## Formulario de contacto (Resend)
+
+El formulario de `/formulacontacto` se procesa en el servidor mediante una acción de
+SvelteKit (`+page.server.ts`) y envía el email con [Resend](https://resend.com).
+
+1. Copia `.env.example` a `.env`.
+2. Crea una API key en https://resend.com/api-keys y asígnala a `RESEND_API_KEY`.
+3. Configura el buzón de destino en `CONTACT_FORM_TO`.
+4. Verifica tu dominio en Resend y usa un remitente de ese dominio en `CONTACT_FORM_FROM`.
+   Para pruebas puedes usar `Trama Studio <onboarding@resend.dev>`, que solo puede
+   enviar al email de la cuenta de Resend.
+
+Sin `RESEND_API_KEY` o `CONTACT_FORM_TO`, el formulario muestra un error de configuración
+en lugar de enviar el email. Los secretos no se exponen al cliente: se leen con
+`$env/dynamic/private`.
+
 ## Developing
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
