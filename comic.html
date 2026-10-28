@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comic - Mi Primer Proyecto</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Comic Neue', cursive, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            -webkit-text-stroke: 2px black;
+        }
+        .comic-grid {
+            display: grid;
+            gap: 20px;
+        }
+        .panel {
+            background: white;
+            border: 4px solid black;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .panel-header {
+            background: #ffd93d;
+            border: 2px solid black;
+            padding: 8px 16px;
+            display: inline-block;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.3);
+        }
+        .panel-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            align-items: center;
+        }
+        .character {
+            text-align: center;
+        }
+        .character-box {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: 3px solid black;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+        }
+        .speech-bubble {
+            background: white;
+            border: 3px solid black;
+            border-radius: 20px;
+            padding: 15px 20px;
+            position: relative;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            border-right: 20px solid black;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            left: -14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-right: 17px solid white;
+        }
+        .thought {
+            background: #e0f7fa;
+            font-style: italic;
+        }
+        ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        .date {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 0.9em;
+            color: #666;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>¡LA HISTORIA DE MI PRIMER PROYECTO!</h1>
+        
+        <div class="comic-grid">
+            <!-- Panel 1 -->
+            <div class="panel">
+                <div class="date">Inicio del Proyecto</div>
+                <div class="panel-header">PANEL 1 - Configuración Inicial</div>
+                <div class="panel-content">
+                    <div class="character">
+                        <div class="character-box">👨‍💻</div>
+                        <strong>Desarrollador</strong>
+                    </div>
+                    <div class="speech-bubble">
+                        <strong>¡Empecemos!</strong><br>
+                        Configuro el proyecto con <strong>SvelteKit</strong>, <strong>TypeScript</strong> y <strong>Tailwind CSS</strong> para crear una aplicación web moderna.
+                        <ul>
+                            <li>✅ Estructura base de SvelteKit</li>
+                            <li>✅ Configuración de Tailwind CSS v4</li>
+                            <li>✅ TypeScript configurado</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 2 -->
+            <div class="panel">
+                <div class="date">Estructura</div>
+                <div class="panel-header">PANEL 2 - Construyendo la Base</div>
+                <div class="panel-content">
+                    <div class="character">
+                        <div class="character-box">🏗️</div>
+                        <strong>Arquitecto</strong>
+                    </div>
+                    <div class="speech-bubble">
+                        <strong>Organizando todo...</strong><br>
+                        Creo la estructura de componentes, rutas y configuración necesaria.
+                        <ul>
+                            <li>📁 Componentes reutilizables</li>
+                            <li>🧭 Sistema de navegación</li>
+                            <li>🎨 Layouts y estilos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 3 -->
+            <div class="panel">
+                <div class="date">Funcionalidad</div>
+                <div class="panel-header">PANEL 3 - Formulario de Contacto</div>
+                <div class="panel-content">
+                    <div class="character">
+                        <div class="character-box">📧</div>
+                        <strong>Comunicador</strong>
+                    </div>
+                    <div class="speech-bubble">
+                        <strong>¡Necesitamos contacto!</strong><br>
+                        Implemento un formulario de contacto funcional con envío de emails usando <strong>Resend</strong>.
+                        <ul>
+                            <li>📝 Formulario de contacto</li>
+                            <li>📨 Envío de emails con Resend</li>
+                            <li>⚡ Server Actions en SvelteKit</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 4 -->
+            <div class="panel">
+                <div class="date">Catálogo</div>
+                <div class="panel-header">PANEL 4 - Catálogo de Productos</div>
+                <div class="panel-content">
+                    <div class="character">
+                        <div class="character-box">🛍️</div>
+                        <strong>Vendedor</strong>
+                    </div>
+                    <div class="speech-bubble">
+                        <strong>¡A vender se ha dicho!</strong><br>
+                        Agrego un catálogo de productos con tarjetas visuales atractivas.
+                        <ul>
+                            <li>🏷️ Tarjetas de producto</li>
+                            <li>🖼️ Diseño responsive</li>
+                            <li>🎯 Navegación mejorada</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 5 -->
+            <div class="panel">
+                <div class="date">Hoy</div>
+                <div class="panel-header">PANEL 5 - Reproductor de Música</div>
+                <div class="panel-content">
+                    <div class="character">
+                        <div class="character-box">🎵</div>
+                        <strong>Músico</strong>
+                    </div>
+                    <div class="speech-bubble">
+                        <strong>¡Hora de música!</strong><br>
+                        Creo un reproductor de música con diseño moderno, oscuro y atractivo. Solo diseño, sin funcionalidad por ahora.
+                        <ul>
+                            <li>🎨 Interfaz moderna con gradientes</li>
+                            <li>💿 Diseño tipo reproductor premium</li>
+                            <li>📋 Lista de reproducción visual</li>
+                            <li>🎛️ Controles y barra de progreso</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 6 -->
+            <div class="panel">
+                <div class="date">Final</div>
+                <div class="panel-header">PANEL 6 - ¡Proyecto en Crecimiento!</div>
+                <div class="panel-content">
+                    <div class="character">
+                        <div class="character-box">🚀</div>
+                        <strong>Equipo Completo</strong>
+                    </div>
+                    <div class="speech-bubble thought">
+                        <strong>¡Muy buen avance!</strong><br>
+                        El proyecto va tomando forma con una web moderna, funcional y con diseños atractivos. 
+                        <br><br>
+                        <strong>Tecnologías usadas:</strong> SvelteKit 5, TypeScript, Tailwind CSS v4, Iconify, Resend<br><br>
+                        <strong>¡A seguir construyendo!</strong> 🎉
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
