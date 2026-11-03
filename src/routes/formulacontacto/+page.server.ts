@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import { RESEND_API_KEY, CONTACT_FORM_TO, CONTACT_FORM_FROM } from '$app/env/private';
+import { RESEND_API_KEY, CONTACT_FORM_TO, CONTACT_FORM_FROM, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID } from '$env/static/private';
 import { Resend } from 'resend';
 import type { Actions } from './$types';
 
@@ -105,24 +105,12 @@ export const actions = {
 
 		const html = `
 			<div style="font-family: Georgia, 'Times New Roman', serif; color: #1c1917; line-height: 1.6;">
-				<h1 style="font-size: 20px; margin: 0 0 16px;">Nueva consulta desde la web</h1>
+				<h1 style="font-size: 20px; margin: 0 0 16px;">Nuevo pedido / consulta desde la web</h1>
 				<table style="border-collapse: collapse; font-size: 14px;">
-					<tr>
-						<td style="padding: 4px 16px 4px 0; color: #78716c;">Nombre</td>
-						<td style="padding: 4px 0;">${escapar(nombre)}</td>
-					</tr>
-					<tr>
-						<td style="padding: 4px 16px 4px 0; color: #78716c;">Email</td>
-						<td style="padding: 4px 0;">${escapar(email)}</td>
-					</tr>
-					<tr>
-						<td style="padding: 4px 16px 4px 0; color: #78716c;">Teléfono</td>
-						<td style="padding: 4px 0;">${escapar(telefono) || 'No indicado'}</td>
-					</tr>
-					<tr>
-						<td style="padding: 4px 16px 4px 0; color: #78716c;">Tipo de consulta</td>
-						<td style="padding: 4px 0;">${escapar(tipo)}</td>
-					</tr>
+					<tr><td style="padding: 4px 16px 4px 0; color: #78716c;">Nombre</td><td style="padding: 4px 0;">${escapar(nombre)}</td></tr>
+					<tr><td style="padding: 4px 16px 4px 0; color: #78716c;">Email</td><td style="padding: 4px 0;">${escapar(email)}</td></tr>
+					<tr><td style="padding: 4px 16px 4px 0; color: #78716c;">Teléfono</td><td style="padding: 4px 0;">${escapar(telefono) || 'No indicado'}</td></tr>
+					<tr><td style="padding: 4px 16px 4px 0; color: #78716c;">Tipo de consulta</td><td style="padding: 4px 0;">${escapar(tipo)}</td></tr>
 				</table>
 				<h2 style="font-size: 16px; margin: 24px 0 8px;">Mensaje</h2>
 				<p style="font-size: 14px; margin: 0; white-space: pre-line;">${escapar(mensaje)}</p>
@@ -130,7 +118,7 @@ export const actions = {
 		`;
 
 		const texto = [
-			'Nueva consulta desde la web',
+			'Nuevo pedido / consulta desde la web',
 			'',
 			`Nombre: ${nombre}`,
 			`Email: ${email}`,
@@ -143,10 +131,10 @@ export const actions = {
 
 		try {
 			const { error } = await resend.emails.send({
-				from: remitente,
+				from: remitente || 'Trama Studio <onboarding@resend.dev>',
 				to: [destinatario],
 				replyTo: email,
-				subject: `Nueva consulta · ${tipo} · ${nombre}`,
+				subject: `Nuevo pedido · ${tipo} · ${nombre}`,
 				html,
 				text: texto
 			});
@@ -172,9 +160,38 @@ export const actions = {
 			});
 		}
 
+		// Notificación por Telegram cuando hay un pedido/consulta
+		try {
+			if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+				const textoTelegram = [
+					'🛍️ NUEVO PEDIDO / CONSULTA',
+					'',
+					`📌 Tipo: ${tipo}`,
+					`👤 Nombre: ${nombre}`,
+					`📧 Email: ${email}`,
+					`📞 Teléfono: ${telefono || 'No indicado'}`,
+					'',
+					'💬 Mensaje:',
+					mensaje
+				].join('\n');
+
+				await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						chat_id: TELEGRAM_CHAT_ID,
+						text: textoTelegram,
+						disable_web_page_preview: true
+					})
+				});
+			}
+		} catch (e) {
+			console.error('[contacto] No se pudo enviar la notificación por Telegram:', e);
+		}
+
 		return {
 			success: true,
-			mensaje: 'Gracias por escribirnos. Te responderemos en 24 – 48 h laborables.'
+			mensaje: '¡Pedido enviado correctamente! Te hemos notificado y te responderemos en 24 – 48 h laborables.'
 		};
 	}
 } satisfies Actions;

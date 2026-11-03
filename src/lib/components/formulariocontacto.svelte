@@ -47,13 +47,15 @@
 		enviando = true;
 
 		return async ({ result, update }) => {
-			await update();
-			enviando = false;
-
-			if (result.type === 'success' && result.data?.success) {
+			if (result.type === 'success') {
+				await update();
+				enviando = false;
 				await tick();
 				formulario?.reset();
+				return;
 			}
+			await update();
+			enviando = false;
 		};
 	}}
 >
