@@ -3,7 +3,6 @@
 	import favicon from '#lib/assets/favicon.svg';
 	import Icon from '@iconify/svelte';
 	import { page } from '$app/state';
-	import PlayerGlobal from '#lib/components/PlayerGlobal.svelte';
 
 	let { children } = $props();
 
@@ -92,6 +91,3 @@
 </header>
 
 {@render children()}
-
-<PlayerGlobal />
-<div style="height: 90px;"></div>
