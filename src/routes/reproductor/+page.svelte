@@ -1,5 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import axios from 'axios';
+  import {
+    cargarEstadoReproductor,
+    estadoReproductor,
+    guardarEstadoReproductor,
+    establecerTracks,
+    obtenerCancionActual,
+    siguienteCancion,
+    anteriorCancion,
+    seleccionarCancion,
+    alternarAleatorio as alternarAleatorioStore,
+    alternarRepetir as alternarRepetirStore,
+    alternarFavorito as alternarFavoritoStore
+  } from '#lib/state/reproductor.svelte';
 
   type Track = {
     id: string;
@@ -12,22 +26,30 @@
 
   let { data }: { data: { tracks: Track[]; error: string | null } } = $props();
 
-  const tracks = $derived(data.tracks);
+  let tracks = $state<Track[]>(data.tracks || []);
+  let errorCarga = $state<string | null>(data.error);
 
   let audio: HTMLAudioElement | undefined = $state();
-  let indice = $state(0);
   let reproduciendo = $state(false);
-  let actual = $state(0);
   let duracion = $state(0);
-  let volumen = $state(0.8);
-  let aleatorio = $state(false);
-  let repetir = $state(false);
-  let favoritos = $state<string[]>([]);
   let duraciones = $state<Record<string, number>>({});
+  let actual = $state(0);
+  let cargando = $state(false);
 
-  const cancionActual = $derived(tracks[indice]);
-  const porcentaje = $derived(duracion > 0 ? (actual / duracion) * 100 : 0);
-  const esFavorita = $derived(cancionActual ? favoritos.includes(cancionActual.id) : false);
+  const aleatorio = $derived(estadoReproductor.aleatorio);
+  const repetir = $derived(estadoReproductor.repetir);
+  const volumen = $derived(estadoReproductor.volumen);
+
+  const cancionActual = $derived(
+    obtenerCancionActual() ?? tracks.find((track) => track.id === estadoReproductor.cancionId) ?? tracks[0]
+  );
+  const indice = $derived(estadoReproductor.indiceActual >= 0 ? estadoReproductor.indiceActual : (cancionActual ? tracks.indexOf(cancionActual) : 0));
+  const porcentaje = $derived(
+    duracion > 0 ? (estadoReproductor.tiempo / duracion) * 100 : 0
+  );
+  const esFavorita = $derived(
+    cancionActual ? estadoReproductor.favoritos.includes(cancionActual.id) : false
+  );
 
   function formatearTiempo(segundos: number) {
     if (!Number.isFinite(segundos) || segundos < 0) return '0:00';
@@ -38,34 +60,66 @@
 
   function reproducir() {
     if (!audio) return;
-    void audio.play().catch((error) => {
-      console.error('No se pudo reproducir la canción:', error);
-      reproduciendo = false;
-    });
+    if (!audio.src || audio.src === window.location.href) {
+      if (cancionActual?.audio) {
+        audio.src = cancionActual.audio;
+        audio.load();
+      } else {
+        return;
+      }
+    }
+    audio.volume = estadoReproductor.volumen;
+    const promesa = audio.play();
+    if (promesa !== undefined) {
+      promesa
+        .then(() => {
+          reproduciendo = true;
+        })
+        .catch((error) => {
+          console.error('No se pudo reproducir la canción:', error);
+          reproduciendo = false;
+        });
+    } else {
+      reproduciendo = true;
+    }
   }
 
   function cargarCancion(nuevoIndice: number, autoplay = true) {
     if (!audio || tracks.length === 0) return;
 
-    const posicion = (nuevoIndice + tracks.length) % tracks.length;
-    indice = posicion;
+    seleccionarCancion(nuevoIndice);
+    const track = obtenerCancionActual() ?? tracks[estadoReproductor.indiceActual] ?? tracks[nuevoIndice];
+    if (!track || !track.audio) return;
 
-    const track = tracks[posicion];
-    audio.src = track.audio;
-    audio.currentTime = 0;
+    estadoReproductor.tiempo = 0;
     actual = 0;
+
+    try {
+      audio.pause();
+    } catch (e) {}
+    audio.crossOrigin = 'anonymous';
+    audio.src = track.audio;
+    audio.load();
+    audio.volume = estadoReproductor.volumen;
+    audio.currentTime = 0;
     duracion = duraciones[track.id] ?? 0;
 
-    if (autoplay) reproducir();
+    if (autoplay) {
+      setTimeout(() => {
+        reproducir();
+      }, 200);
+    }
+    guardarEstadoReproductor(true);
   }
 
   function alternarReproduccion() {
     if (!audio || !cancionActual) return;
 
-    if (audio.paused) {
+    if (audio.paused || audio.ended) {
       reproducir();
     } else {
       audio.pause();
+      reproduciendo = false;
     }
   }
 
@@ -75,21 +129,49 @@
     if (audio.currentTime > 3) {
       audio.currentTime = 0;
       actual = 0;
+      estadoReproductor.tiempo = 0;
+      guardarEstadoReproductor(true);
       return;
     }
 
-    cargarCancion(indice - 1);
+    anteriorCancion();
+    const track = obtenerCancionActual() ?? tracks[estadoReproductor.indiceActual];
+    if (!track?.audio) return;
+    estadoReproductor.tiempo = 0;
+    actual = 0;
+    try {
+      audio.pause();
+    } catch (e) {}
+    audio.crossOrigin = 'anonymous';
+    audio.src = track.audio;
+    audio.load();
+    audio.volume = estadoReproductor.volumen;
+    audio.currentTime = 0;
+    duracion = duraciones[track.id] ?? 0;
+    setTimeout(() => reproducir(), 200);
+    guardarEstadoReproductor(true);
   }
 
   function siguiente() {
     if (tracks.length === 0) return;
 
     if (aleatorio && tracks.length > 1) {
-      let posicion = indice;
-      while (posicion === indice) {
-        posicion = Math.floor(Math.random() * tracks.length);
-      }
-      cargarCancion(posicion);
+      siguienteCancion();
+      const track = obtenerCancionActual() ?? tracks[estadoReproductor.indiceActual];
+      if (!audio || !track?.audio) return;
+      estadoReproductor.tiempo = 0;
+      actual = 0;
+      try {
+        audio.pause();
+      } catch (e) {}
+      audio.crossOrigin = 'anonymous';
+      audio.src = track.audio;
+      audio.load();
+      audio.volume = estadoReproductor.volumen;
+      audio.currentTime = 0;
+      duracion = duraciones[track.id] ?? 0;
+      setTimeout(() => reproducir(), 200);
+      guardarEstadoReproductor(true);
       return;
     }
 
@@ -101,7 +183,9 @@
       if (audio) {
         audio.currentTime = 0;
         actual = 0;
+        estadoReproductor.tiempo = 0;
         reproducir();
+        guardarEstadoReproductor(true);
       }
       return;
     }
@@ -109,24 +193,58 @@
     siguiente();
   }
 
+  function actualizarTiempo() {
+    if (!audio) return;
+
+    actual = audio.currentTime;
+    estadoReproductor.tiempo = audio.currentTime;
+    guardarEstadoReproductor();
+  }
+
+  function alPausar() {
+    reproduciendo = false;
+
+    if (audio) {
+      actual = audio.currentTime;
+      estadoReproductor.tiempo = audio.currentTime;
+    }
+
+    guardarEstadoReproductor(true);
+  }
+
   function buscar(evento: Event) {
     const valor = Number((evento.currentTarget as HTMLInputElement).value);
+    estadoReproductor.tiempo = valor;
     actual = valor;
     if (audio) audio.currentTime = valor;
+    guardarEstadoReproductor(true);
   }
 
   function cambiarVolumen(evento: Event) {
     const valor = Number((evento.currentTarget as HTMLInputElement).value);
-    volumen = valor;
+    estadoReproductor.volumen = valor;
     if (audio) audio.volume = valor;
+    guardarEstadoReproductor(true);
+  }
+
+  function alternarAleatorio() {
+    estadoReproductor.aleatorio = !estadoReproductor.aleatorio;
+    guardarEstadoReproductor(true);
+  }
+
+  function alternarRepetir() {
+    estadoReproductor.repetir = !estadoReproductor.repetir;
+    guardarEstadoReproductor(true);
   }
 
   function alternarFavorita() {
     if (!cancionActual) return;
 
-    favoritos = esFavorita
-      ? favoritos.filter((id) => id !== cancionActual.id)
-      : [...favoritos, cancionActual.id];
+    estadoReproductor.favoritos = esFavorita
+      ? estadoReproductor.favoritos.filter((id) => id !== cancionActual.id)
+      : [...estadoReproductor.favoritos, cancionActual.id];
+
+    guardarEstadoReproductor(true);
   }
 
   function guardarDuracion() {
@@ -138,31 +256,155 @@
     }
   }
 
-  onMount(() => {
+  async function cargarDesdeApi() {
+    cargando = true;
+    try {
+      const respuesta = await axios.get('/api/canciones?_=' + Date.now(), {
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache'
+        },
+        timeout: 8000
+      });
+      let lista: any[] = [];
+      if (Array.isArray(respuesta.data?.tracks)) {
+        lista = respuesta.data.tracks;
+      } else if (Array.isArray(respuesta.data)) {
+        lista = respuesta.data;
+      }
+      if (lista.length === 0 && Array.isArray(data.tracks) && data.tracks.length > 0) {
+        lista = data.tracks;
+      }
+      if (lista.length === 0) {
+        const { canciones } = await import('#lib/server/canciones');
+        lista = canciones;
+      }
+      tracks = lista
+        .map((t: any) => ({
+          id: t.id || t._id || (crypto.randomUUID ? crypto.randomUUID() : String(Math.random())),
+          titulo: t.titulo || t.title || t.nombre || t.name || 'Sin título',
+          audio: t.audio || t.url || t.song || t.track || t.src || t.audioUrl || '',
+          artista: t.artista || t.artist || t.autor || t.author || 'Desconocido',
+          album: t.album || t.disco || t.albumName || '',
+          portada: t.portada || t.cover || t.image || t.img || t.thumbnail || null
+        }))
+        .filter((t) => t.audio);
+      establecerTracks(tracks);
+      errorCarga = tracks.length === 0 ? 'No hay canciones disponibles.' : null;
+    } catch (error) {
+      console.error('Error al cargar canciones con Axios:', error);
+      try {
+        const { canciones } = await import('#lib/server/canciones');
+        tracks = (canciones as any[])
+          .map((t: any) => ({
+            id: t.id || (crypto.randomUUID ? crypto.randomUUID() : String(Math.random())),
+            titulo: t.titulo || t.title || 'Sin título',
+            audio: t.audio || t.url || '',
+            artista: t.artista || t.artist || 'Desconocido',
+            album: t.album || '',
+            portada: t.portada || t.cover || null
+          }))
+          .filter((t) => t.audio);
+        establecerTracks(tracks);
+        errorCarga = tracks.length === 0 ? 'No se pudieron cargar las canciones desde la API.' : null;
+      } catch (e) {
+        if (Array.isArray(data.tracks) && data.tracks.length > 0) {
+          tracks = (data.tracks as any[])
+            .map((t: any) => ({
+              id: t.id || (crypto.randomUUID ? crypto.randomUUID() : String(Math.random())),
+              titulo: t.titulo || t.title || 'Sin título',
+              audio: t.audio || t.url || '',
+              artista: t.artista || t.artist || 'Desconocido',
+              album: t.album || '',
+              portada: t.portada || t.cover || null
+            }))
+            .filter((t) => t.audio);
+          establecerTracks(tracks);
+          errorCarga = null;
+        } else {
+          errorCarga = 'No se pudieron cargar las canciones desde la API.';
+        }
+      }
+    } finally {
+      cargando = false;
+    }
+  }
+
+  onMount(async () => {
+    await cargarDesdeApi();
     if (!audio || tracks.length === 0) return;
 
-    audio.volume = volumen;
-    audio.src = tracks[0].audio;
+    cargarEstadoReproductor();
+    establecerTracks(tracks);
+
+    const cancionGuardada = tracks.find((track) => track.id === estadoReproductor.cancionId);
+    const inicial = cancionGuardada ?? tracks[0];
+    if (!inicial || !inicial.audio) return;
+    const tiempoGuardado = cancionGuardada ? estadoReproductor.tiempo : 0;
+
+    estadoReproductor.cancionId = inicial.id;
+    estadoReproductor.indiceActual = tracks.indexOf(inicial);
+    estadoReproductor.tiempo = tiempoGuardado;
+    actual = tiempoGuardado;
+    if (audio) {
+      audio.volume = estadoReproductor.volumen;
+      audio.crossOrigin = 'anonymous';
+      audio.preload = 'auto';
+    }
+
+    const restaurarTiempo = () => {
+      if (!audio || tiempoGuardado <= 0) return;
+
+      const limite =
+        Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : tiempoGuardado;
+      audio.currentTime = Math.min(tiempoGuardado, limite);
+      actual = audio.currentTime;
+      estadoReproductor.tiempo = audio.currentTime;
+    };
+
+    if (audio) {
+      audio.addEventListener('loadedmetadata', restaurarTiempo, { once: true });
+      audio.pause();
+      audio.src = inicial.audio;
+      audio.load();
+    }
 
     // Precarga la duración de cada canción para mostrarla en la lista.
     const precargas: HTMLAudioElement[] = [];
 
     for (const track of tracks) {
-      const pre = new Audio();
-      pre.preload = 'metadata';
-      pre.src = track.audio;
+      if (!track.audio) continue;
+      try {
+        const pre = new Audio();
+        pre.preload = 'metadata';
+        pre.crossOrigin = 'anonymous';
+        pre.src = track.audio;
 
-      pre.addEventListener('loadedmetadata', () => {
-        if (Number.isFinite(pre.duration) && pre.duration > 0) {
-          duraciones = { ...duraciones, [track.id]: pre.duration };
-        }
-      });
+        pre.addEventListener('loadedmetadata', () => {
+          if (Number.isFinite(pre.duration) && pre.duration > 0) {
+            duraciones = { ...duraciones, [track.id]: pre.duration };
+          }
+        });
 
-      precargas.push(pre);
+        precargas.push(pre);
+      } catch (e) {
+        // ignorar
+      }
     }
+
+    const guardarAlSalir = () => guardarEstadoReproductor(true);
+    const guardarAlOcultar = () => {
+      if (document.visibilityState === 'hidden') guardarEstadoReproductor(true);
+    };
+
+    window.addEventListener('beforeunload', guardarAlSalir);
+    document.addEventListener('visibilitychange', guardarAlOcultar);
 
     return () => {
       for (const pre of precargas) pre.src = '';
+      audio?.removeEventListener('loadedmetadata', restaurarTiempo);
+      window.removeEventListener('beforeunload', guardarAlSalir);
+      document.removeEventListener('visibilitychange', guardarAlOcultar);
     };
   });
 </script>
@@ -178,20 +420,25 @@
 
 <div class="player-page">
   <div class="player-container">
-    {#if data.error}
+    {#if errorCarga && tracks.length === 0}
       <div class="empty-state">
         <i class="ti ti-music-off"></i>
         <h1 class="song-title">Sin conexión</h1>
-        <p class="song-artist">{data.error}</p>
+        <p class="song-artist">{errorCarga}</p>
+        <button class="play-btn" type="button" onclick={cargarDesdeApi} aria-label="Reintentar" style="margin-top: 16px;">
+          <i class="ti ti-refresh"></i>
+        </button>
       </div>
     {:else if cancionActual}
       <audio
         bind:this={audio}
-        preload="metadata"
+        preload="auto"
+        crossorigin="anonymous"
+        playsinline
         onplay={() => (reproduciendo = true)}
         onpause={() => (reproduciendo = false)}
         onended={alTerminar}
-        ontimeupdate={() => (actual = audio?.currentTime ?? 0)}
+        ontimeupdate={actualizarTiempo}
         onloadedmetadata={guardarDuracion}
         ondurationchange={guardarDuracion}
       ></audio>
@@ -203,7 +450,7 @@
             <img
               class="cover-image"
               src={cancionActual.portada}
-              alt={`Portada de ${cancionActual.album}`}
+              alt={`Portada de ${cancionActual.album || cancionActual.titulo}`}
             />
           {/if}
           <div class="vinyl-overlay" class:girando={reproduciendo}>
@@ -257,7 +504,7 @@
             class="secondary-btn"
             class:activo={aleatorio}
             type="button"
-            onclick={() => (aleatorio = !aleatorio)}
+            onclick={() => { alternarAleatorio(); alternarAleatorioStore(); }}
             aria-label="Aleatorio"
             aria-pressed={aleatorio}
           >
@@ -267,7 +514,7 @@
             class="secondary-btn"
             class:activo={repetir}
             type="button"
-            onclick={() => (repetir = !repetir)}
+            onclick={() => { alternarRepetir(); alternarRepetirStore(); }}
             aria-label="Repetir canción"
             aria-pressed={repetir}
           >
@@ -277,7 +524,7 @@
             class="secondary-btn"
             class:favorita={esFavorita}
             type="button"
-            onclick={alternarFavorita}
+            onclick={() => { alternarFavorita(); alternarFavoritoStore(); }}
             aria-label={esFavorita ? 'Quitar de favoritos' : 'Añadir a favoritos'}
             aria-pressed={esFavorita}
           >
@@ -326,6 +573,15 @@
             aria-current={indice === i ? 'true' : undefined}
             aria-label={`Reproducir ${track.titulo} de ${track.artista}`}
           >
+            <div class="playlist-cover">
+              {#if track.portada}
+                <img src={track.portada} alt={`Portada de ${track.titulo}`} />
+              {:else}
+                <div class="playlist-cover-placeholder">
+                  <i class="ti ti-music"></i>
+                </div>
+              {/if}
+            </div>
             <div class="playlist-number">
               {#if indice === i}
                 <div class="playing-indicator" class:pausado={!reproduciendo}>
@@ -704,6 +960,34 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
+  }
+
+  .playlist-cover {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  }
+
+  .playlist-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .playlist-cover-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+  }
+
+  .playlist-cover-placeholder i {
+    font-size: 18px;
   }
 
   .playlist-item.active {
