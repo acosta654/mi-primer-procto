@@ -91,48 +91,10 @@
 </header>
 
 {@render children()}
-<div>
-    <!-- Grupo Amarillo -->
-    <div>
-        <img src="" alt="" />
-        <p>Caída y Peso</p>
-        <p>Lana Bouclé</p>
-    </div>
-    <!-- Grupo Verde -->
-    <div> 
-        <div>
-            <p>Lana Bouclé</p>
-            <p>340</p>
-        </div>
-        <div>
-            <p>Lino Pesado</p>
-            <p>420</p>
-        </div>
-        <div>
-            <p>Seda Fluida</p>
-            <p>110</p>
-        </div>
-        <div>
-            <p>Sarga Algodón</p>
-            <p>280</p>
-        </div>
-    </div>
-    <!-- Grupo Azul 1 -->
-    <div>
-        <div>
-            <p>Rigidez de flexión</p>
-            <p>72%</p>
-        </div>
-        <!-- Linea -->
-        <div></div>
-    </div>
-    <!-- Grupo azul 2 -->
-    <div>
-        <div>
-            <p>Rigidez de flexión</p>
-            <p>72%</p>
-        </div>
-        <!-- Linea -->
-        <div></div>
-    </div>
-</div>
+
+<script>
+  import PlayerGlobal from '#lib/components/PlayerGlobal.svelte';
+</script>
+
+<PlayerGlobal />
+<div style="height: 90px;"></div>
