@@ -97,7 +97,7 @@ export const actions = {
 				success: false,
 				errores: {},
 				valores,
-				mensaje: 'El formulario no está configurado. Inténtalo de nuevo más tarde.'
+				mensaje: 'El formulario no está configurado. Revisa las variables de entorno.'
 			});
 		}
 
@@ -163,17 +163,7 @@ export const actions = {
 		// Notificación por Telegram cuando hay un pedido/consulta
 		try {
 			if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-				const textoTelegram = [
-					'🛍️ NUEVO PEDIDO / CONSULTA',
-					'',
-					`📌 Tipo: ${tipo}`,
-					`👤 Nombre: ${nombre}`,
-					`📧 Email: ${email}`,
-					`📞 Teléfono: ${telefono || 'No indicado'}`,
-					'',
-					'💬 Mensaje:',
-					mensaje
-				].join('\n');
+				const textoTelegram = `🛍️ NUEVO PEDIDO / CONSULTA\n\n📌 Tipo: ${tipo}\n👤 Nombre: ${nombre}\n📧 Email: ${email}\n📞 Teléfono: ${telefono || 'No indicado'}\n\n💬 Mensaje:\n${mensaje}`;
 
 				await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
 					method: 'POST',
